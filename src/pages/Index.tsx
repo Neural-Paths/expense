@@ -10,29 +10,61 @@ import ExpenseCard, { Expense } from '@/components/expense/ExpenseCard';
 import AnimatedNumber from '@/components/ui-custom/AnimatedNumber';
 import { Link } from 'react-router-dom';
 import { 
-  generateSampleExpenses, 
-  getRecentExpenses
+  getRecentExpenses,
+  calculateTotalExpenses,
+  getExpensesByCategory
 } from '@/utils/expense-utils';
 import AIInsightsSection from '@/components/ai/AIInsightsSection';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
+import { getExpenses } from '@/services/expenseService';
+import { formatCurrency } from '@/utils/expense-utils';
 
 const HomePage = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // In a real implementation, this would fetch expenses from an API
-    setIsLoading(false);
+    const loadExpenses = () => {
+      try {
+        const loadedExpenses = getExpenses();
+        setExpenses(loadedExpenses);
+      } catch (error) {
+        console.error('Error loading expenses:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadExpenses();
   }, []);
   
   const recentExpenses = getRecentExpenses(expenses, 3);
+  
+  // Calculate dashboard statistics
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  
+  const expensesThisMonth = expenses.filter(expense => {
+    const expenseDate = new Date(expense.date);
+    return expenseDate.getMonth() === currentMonth && 
+           expenseDate.getFullYear() === currentYear;
+  });
+  
+  const totalExpensesThisMonth = calculateTotalExpenses(expensesThisMonth);
+  const pendingReceipts = expenses.filter(expense => expense.status === 'pending').length;
+  
+  // Calculate budget utilization (assuming a monthly budget of $5000)
+  const monthlyBudget = 5000;
+  const budgetUtilization = Math.min(100, (totalExpensesThisMonth / monthlyBudget) * 100);
+  
+  // Calculate tax refund estimate (assuming 20% of business expenses are tax deductible)
+  const taxRefundEstimate = totalExpensesThisMonth * 0.2;
+  
   const budgetData = [
-    { name: 'Food', budget: 0, spent: 0, value: 0, color: '#3b82f6' },
-    { name: 'Travel', budget: 0, spent: 0, value: 0, color: '#8b5cf6' },
-    { name: 'Office', budget: 0, spent: 0, value: 0, color: '#10b981' }
+    { name: 'Food', budget: 1000, spent: 0, value: 0, color: '#3b82f6' },
+    { name: 'Travel', budget: 2000, spent: 0, value: 0, color: '#8b5cf6' },
+    { name: 'Office', budget: 2000, spent: 0, value: 0, color: '#10b981' }
   ];
-  const totalExpensesThisMonth = 0;
-  const totalBudget = 0;
   
   // Helper function to create auth URLs with redirect parameters
   const getAuthUrl = (path: string) => {
@@ -84,7 +116,7 @@ const HomePage = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <CardStats
               title="Total Expenses"
-              value="$0"
+              value={formatCurrency(totalExpensesThisMonth)}
               description="This month"
               icon={<DollarSign className="h-4 w-4" />}
               trend={0}
@@ -92,7 +124,7 @@ const HomePage = () => {
             
             <CardStats
               title="Pending Receipts"
-              value="0"
+              value={pendingReceipts.toString()}
               description="Awaiting processing"
               icon={<CreditCard className="h-4 w-4" />}
               trend={0}
@@ -100,7 +132,7 @@ const HomePage = () => {
             
             <CardStats
               title="Budget Utilization"
-              value="0%"
+              value={`${Math.round(budgetUtilization)}%`}
               description="Monthly budget"
               icon={<BarChart4 className="h-4 w-4" />}
               trend={0}
@@ -108,7 +140,7 @@ const HomePage = () => {
             
             <CardStats
               title="Tax Refund Estimate"
-              value="$0"
+              value={formatCurrency(taxRefundEstimate)}
               description="Based on current expenses"
               icon={<DollarSign className="h-4 w-4" />}
               trend={0}
@@ -177,7 +209,7 @@ const HomePage = () => {
                 <ProgressCard
                   title="Food & Dining"
                   current={0}
-                  total={0}
+                  total={1000}
                   unit="$"
                   description="Monthly budget"
                 />
@@ -185,7 +217,7 @@ const HomePage = () => {
                 <ProgressCard
                   title="Travel"
                   current={0}
-                  total={0}
+                  total={2000}
                   unit="$"
                   description="Monthly budget"
                 />
@@ -193,7 +225,7 @@ const HomePage = () => {
                 <ProgressCard
                   title="Office Supplies"
                   current={0}
-                  total={0}
+                  total={2000}
                   unit="$"
                   description="Monthly budget"
                 />

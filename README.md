@@ -1,6 +1,6 @@
 # DripWise - AI-Powered Expense Tracker
 
-![Neural Paths Logo](https://www.neuralpaths.ai/images/neural-paths-footer.svg)
+![Neural Paths Logo](https://www.neuralpaths.ai/images/neural-paths-footer.svg) #Neural Paths
 
 DripWise is an intelligent expense tracking solution developed by [Neural Paths](https://neuralpaths.ai), designed to streamline business expense management through the power of artificial intelligence.
 
